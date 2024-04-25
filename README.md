@@ -707,3 +707,160 @@ model.predict(dog_img)
 1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 191ms/step
 array([[0.48901746]], dtype=float32)
 ```
+
+## Deep Learning and CNN Assessment Solution
+```Python
+from keras.datasets import fashion_mnist
+
+(x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
+
+import matplotlib.pyplot as plt
+
+plt.imshow(x_train[1])
+
+y_train[1]
+
+
+# normalizing x train and x test
+x_train = x_train/255
+x_test = x_test/255
+
+# include 4 dimensional single channel
+x_train = x_train.reshape(60000, 28, 28, 1)
+x_test = x_test.reshape(10000, 28, 28, 1)
+
+# convet y_train and y_test to be one-hot encoded for categorical analysis by Keras
+from keras.utils import to_categorical
+
+y_train 
+
+y_cat_train =to_categorical(y_train)
+
+y_cat_test = to_categorical(y_test)
+```
+Output:                                          
+```Python
+Downloading data from https://storage.googleapis.com/tensorflow/tf-keras-datasets/train-labels-idx1-ubyte.gz
+29515/29515 ━━━━━━━━━━━━━━━━━━━━ 0s 16us/step
+Downloading data from https://storage.googleapis.com/tensorflow/tf-keras-datasets/train-images-idx3-ubyte.gz
+26421880/26421880 ━━━━━━━━━━━━━━━━━━━━ 465s 18us/step
+Downloading data from https://storage.googleapis.com/tensorflow/tf-keras-datasets/t10k-labels-idx1-ubyte.gz
+5148/5148 ━━━━━━━━━━━━━━━━━━━━ 0s 17us/step
+Downloading data from https://storage.googleapis.com/tensorflow/tf-keras-datasets/t10k-images-idx3-ubyte.gz
+4422102/4422102 ━━━━━━━━━━━━━━━━━━━━ 64s 14us/step
+```
+![alt text](image-220.png)
+
+Output:                                   
+```Python
+0
+
+# y_train
+array([9, 0, 0, ..., 3, 0, 5], dtype=uint8)
+```
+```Python
+from keras.models import Sequential
+from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten
+
+model = Sequential()
+
+model.add(Conv2D(filters=32, kernel_size= (4, 4), activation='relu', input_shape=(28, 28, 1)))
+
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Flatten())
+
+model.add(Dense(units=128, activation='relu'))
+
+model.add(Dense(units=10, activation='softmax'))
+
+model.compile(loss='categorical_crossentropy',
+              optimizer='rmsprop', 
+              metrics=['accuracy'])
+```
+```Python
+Model: "sequential_8"
+
+
+ Layer (type)                    ┃ Output Shape           ┃       Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ conv2d_5 (Conv2D)               │ (None, 25, 25, 32)     │           544 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_5 (MaxPooling2D)  │ (None, 12, 12, 32)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ flatten_3 (Flatten)             │ (None, 4608)           │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_6 (Dense)                 │ (None, 128)            │       589,952 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_7 (Dense)                 │ (None, 10)             │         1,290 │
+└─────────────────────────────────┴────────────────────────┴───────────────┘
+
+ Total params: 591,786 (2.26 MB)
+ Trainable params: 591,786 (2.26 MB)
+ Non-trainable params: 0 (0.00 B)
+```
+```Python
+# train and fit the model
+model.fit(x_train, y_cat_train, epochs=10)
+
+# evaluate our model
+model.evaluate(x_test, y_cat_test)
+
+model.metrics_names
+```
+```Python
+Epoch 1/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 21s 11ms/step - accuracy: 0.8067 - loss: 0.5422
+Epoch 2/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.8947 - loss: 0.2862
+Epoch 3/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9141 - loss: 0.2375
+Epoch 4/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9255 - loss: 0.2053
+Epoch 5/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9328 - loss: 0.1808
+Epoch 6/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9403 - loss: 0.1617
+Epoch 7/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9482 - loss: 0.1469
+Epoch 8/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9503 - loss: 0.1359
+Epoch 9/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9570 - loss: 0.1209
+Epoch 10/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9594 - loss: 0.1129
+<keras.src.callbacks.history.History at 0x202041ca3d0>
+
+# evaluateing model
+313/313 ━━━━━━━━━━━━━━━━━━━━ 1s 3ms/step - accuracy: 0.9026 - loss: 0.3396
+[0.3162655234336853, 0.9042999744415283]
+```
+```Python
+# perfrom prediction
+from sklearn.metrics import classification_report
+
+predictions = model.predict(x_test)
+
+print(classification_report(y_test, predictions.argmax(axis=1)))
+```
+```Python
+313/313 ━━━━━━━━━━━━━━━━━━━━ 1s 3ms/step
+              precision    recall  f1-score   support
+
+           0       0.81      0.89      0.85      1000
+           1       0.98      0.98      0.98      1000
+           2       0.80      0.87      0.84      1000
+           3       0.90      0.90      0.90      1000
+           4       0.88      0.79      0.83      1000
+           5       0.98      0.98      0.98      1000
+           6       0.78      0.70      0.74      1000
+           7       0.97      0.97      0.97      1000
+           8       0.98      0.98      0.98      1000
+           9       0.97      0.97      0.97      1000
+
+    accuracy                           0.90     10000
+   macro avg       0.90      0.90      0.90     10000
+weighted avg       0.90      0.90      0.90     10000
+```
+
+
