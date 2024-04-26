@@ -513,6 +513,8 @@ dog_img = cv2.imread('P:/Pi OpenCV  programming/CATS_DOGS/CATS_DOGS/train/DOG/2.
 dog_img = cv2.cvtColor(dog_img, cv2.COLOR_BGR2RGB)
 
 plt.imshow(dog_img)
+
+dog_img.shape
 ```
 
 Output:                                           
@@ -522,3 +524,506 @@ Size of dog image and cat image are not same. In the real word its not possible 
 ```Python
 (199, 188, 3)
 ```
+```Python
+from keras.src.legacy.preprocessing.image import ImageDataGenerator
+
+image_gen = ImageDataGenerator(
+    rotation_range=30,
+    width_shift_range=0.1,
+    height_shift_range=0.1,  # Corrected typo here
+    rescale=1./255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest'
+)
+plt.imshow(image_gen.random_transform(dog_img))
+```
+Output:                                                 
+![alt text](image-219.png)
+
+```Python
+image_gen.flow_from_directory('P:/Pi OpenCV  programming/CATS_DOGS/CATS_DOGS/train')
+
+model = Sequential()
+
+model.add(Conv2D(filters = 32, kernel_size = (3, 3), activation='relu', input_shape=(150, 150, 3)))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Conv2D(filters = 64, kernel_size = (3, 3), activation='relu', input_shape=(150, 150, 3)))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Conv2D(filters = 64, kernel_size = (3, 3), activation='relu', input_shape=(150, 150, 3)))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Flatten())
+
+model.add(Dense(units=128, activation='relu'))
+
+# drop out helps over fitting by randomly turning off some neurons
+model.add(Dropout(0.5))
+
+model.add(Dense(units=1))
+model.add(Activation('sigmoid'))
+
+model.compile(loss='binary_crossentropy',
+              optimizer='adam',
+              metrics=['accuracy'])
+
+# model summery
+
+```
+Output:                                                 
+```Python
+Found 18743 images belonging to 2 classes.
+<keras.src.legacy.preprocessing.image.DirectoryIterator at 0x20279417450>
+
+Model: "sequential_5"
+
+┃ Layer (type)                    ┃ Output Shape           ┃       Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ conv2d (Conv2D)                 │ (None, 148, 148, 32)   │           896 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d (MaxPooling2D)    │ (None, 74, 74, 32)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d_1 (Conv2D)               │ (None, 72, 72, 64)     │        18,496 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_1 (MaxPooling2D)  │ (None, 36, 36, 64)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ conv2d_2 (Conv2D)               │ (None, 34, 34, 64)     │        36,928 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_2 (MaxPooling2D)  │ (None, 17, 17, 64)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ flatten (Flatten)               │ (None, 18496)          │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense (Dense)                   │ (None, 128)            │     2,367,616 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dropout (Dropout)               │ (None, 128)            │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_1 (Dense)                 │ (None, 1)              │           129 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ activation (Activation)         │ (None, 1)              │             0 │
+└─────────────────────────────────┴────────────────────────┴───────────────┘
+
+Total params: 2,424,065 (9.25 MB)
+ Trainable params: 2,424,065 (9.25 MB)
+ Non-trainable params: 0 (0.00 B)
+```
+
+```Python
+
+
+# create image training generation object for both training and testing, choose batch size
+batch_size = 16
+
+train_datagen = image_gen.flow_from_directory('P:/Pi OpenCV  programming/CATS_DOGS/CATS_DOGS/train', 
+target_size = input_shape[:2],
+batch_size = batch_size,
+class_mode = 'binary')
+
+# create image training generation object for both training and testing, choose batch size
+batch_size = 16
+
+test_datagen = image_gen.flow_from_directory('P:/Pi OpenCV  programming/CATS_DOGS/CATS_DOGS/test', 
+target_size = input_shape[:2],
+batch_size = batch_size,
+class_mode = 'binary')
+```
+Output:                                   
+```Python
+# gives number of images found and number of classes.
+Found 18743 images belonging to 2 classes.
+
+# testing data
+Found 6251 images belonging to 2 classes.
+
+```
+```Python
+# defines what image belongs to which class
+train_datagen.class_indices
+
+# if you dont want to see warning use the code
+import warnings
+warnings.filterwarnings('ignore')
+
+results = model.fit(
+    train_datagen, 
+    epochs=1, 
+    steps_per_epoch=150, 
+    validation_data=test_datagen, 
+    validation_steps=12
+)
+
+# saving model
+model.save('my_model.h5')  # HDF5 format
+
+
+# checking historical accuracy
+results.history['accuracy']
+
+# loading my model
+from keras.models import load_model
+new_model = load_model('my_model.h5')
+
+
+dog_file = 'P:/Pi OpenCV  programming/CATS_DOGS/CATS_DOGS/train/DOG/1005.jpg'
+
+from keras.preprocessing import image
+
+dog_img = image.load_img(dog_file, target_size=(150, 150))
+
+dog_img = image.img_to_array(dog_img)
+
+
+dog_img.shape
+```
+```Python
+{'CAT': 0, 'DOG': 1}
+
+# 1 epoch training result, worning suggesting some images are unable to read
+c:\Python311\Lib\site-packages\keras\src\trainers\data_adapters\py_dataset_adapter.py:120: UserWarning: Your `PyDataset` class should call `super().__init__(**kwargs)` in its constructor. `**kwargs` can include `workers`, `use_multiprocessing`, `max_queue_size`. Do not pass these arguments to `fit()`, as they will be ignored.
+  self._warn_if_super_not_called()
+150/150 ━━━━━━━━━━━━━━━━━━━━ 59s 373ms/step - accuracy: 0.5028 - loss: 0.7161 - val_accuracy: 0.5260 - val_loss: 0.6906
+
+[0.5116666555404663]
+
+(150, 150, 3)
+```
+```Python
+# the network will think that the image 150 by 150 is batch of one image so have to expand
+import numpy as np
+dog_img = np.expand_dims(dog_img, axis=0)
+dog_img.shape
+
+# all the image value to be between 0 and 1
+dog_img = dog_img/255.0
+
+model.predict(dog_img)
+```
+```Python
+(1, 150, 150, 3)
+
+# Not able to predict correctly as its run on one epoch, suggesting 48% the image is dog
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 191ms/step
+array([[0.48901746]], dtype=float32)
+```
+## Deep Learning and CNN Assessment Solution
+```Python
+from keras.datasets import fashion_mnist
+
+(x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()
+
+import matplotlib.pyplot as plt
+
+plt.imshow(x_train[1])
+
+y_train[1]
+
+
+# normalizing x train and x test
+x_train = x_train/255
+x_test = x_test/255
+
+# include 4 dimensional single channel
+x_train = x_train.reshape(60000, 28, 28, 1)
+x_test = x_test.reshape(10000, 28, 28, 1)
+
+# convet y_train and y_test to be one-hot encoded for categorical analysis by Keras
+from keras.utils import to_categorical
+
+y_train 
+
+y_cat_train =to_categorical(y_train)
+
+y_cat_test = to_categorical(y_test)
+```
+Output:                                          
+```Python
+Downloading data from https://storage.googleapis.com/tensorflow/tf-keras-datasets/train-labels-idx1-ubyte.gz
+29515/29515 ━━━━━━━━━━━━━━━━━━━━ 0s 16us/step
+Downloading data from https://storage.googleapis.com/tensorflow/tf-keras-datasets/train-images-idx3-ubyte.gz
+26421880/26421880 ━━━━━━━━━━━━━━━━━━━━ 465s 18us/step
+Downloading data from https://storage.googleapis.com/tensorflow/tf-keras-datasets/t10k-labels-idx1-ubyte.gz
+5148/5148 ━━━━━━━━━━━━━━━━━━━━ 0s 17us/step
+Downloading data from https://storage.googleapis.com/tensorflow/tf-keras-datasets/t10k-images-idx3-ubyte.gz
+4422102/4422102 ━━━━━━━━━━━━━━━━━━━━ 64s 14us/step
+```
+![alt text](image-220.png)
+
+Output:                                   
+```Python
+0
+
+# y_train
+array([9, 0, 0, ..., 3, 0, 5], dtype=uint8)
+```
+```Python
+from keras.models import Sequential
+from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten
+
+model = Sequential()
+
+model.add(Conv2D(filters=32, kernel_size= (4, 4), activation='relu', input_shape=(28, 28, 1)))
+
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+model.add(Flatten())
+
+model.add(Dense(units=128, activation='relu'))
+
+model.add(Dense(units=10, activation='softmax'))
+
+model.compile(loss='categorical_crossentropy',
+              optimizer='rmsprop', 
+              metrics=['accuracy'])
+```
+```Python
+Model: "sequential_8"
+
+
+ Layer (type)                    ┃ Output Shape           ┃       Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ conv2d_5 (Conv2D)               │ (None, 25, 25, 32)     │           544 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ max_pooling2d_5 (MaxPooling2D)  │ (None, 12, 12, 32)     │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ flatten_3 (Flatten)             │ (None, 4608)           │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_6 (Dense)                 │ (None, 128)            │       589,952 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_7 (Dense)                 │ (None, 10)             │         1,290 │
+└─────────────────────────────────┴────────────────────────┴───────────────┘
+
+ Total params: 591,786 (2.26 MB)
+ Trainable params: 591,786 (2.26 MB)
+ Non-trainable params: 0 (0.00 B)
+```
+```Python
+# train and fit the model
+model.fit(x_train, y_cat_train, epochs=10)
+
+# evaluate our model
+model.evaluate(x_test, y_cat_test)
+
+model.metrics_names
+```
+```Python
+Epoch 1/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 21s 11ms/step - accuracy: 0.8067 - loss: 0.5422
+Epoch 2/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.8947 - loss: 0.2862
+Epoch 3/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9141 - loss: 0.2375
+Epoch 4/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9255 - loss: 0.2053
+Epoch 5/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9328 - loss: 0.1808
+Epoch 6/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9403 - loss: 0.1617
+Epoch 7/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9482 - loss: 0.1469
+Epoch 8/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9503 - loss: 0.1359
+Epoch 9/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9570 - loss: 0.1209
+Epoch 10/10
+1875/1875 ━━━━━━━━━━━━━━━━━━━━ 19s 10ms/step - accuracy: 0.9594 - loss: 0.1129
+<keras.src.callbacks.history.History at 0x202041ca3d0>
+
+# evaluateing model
+313/313 ━━━━━━━━━━━━━━━━━━━━ 1s 3ms/step - accuracy: 0.9026 - loss: 0.3396
+[0.3162655234336853, 0.9042999744415283]
+```
+```Python
+# perfrom prediction
+from sklearn.metrics import classification_report
+
+predictions = model.predict(x_test)
+
+print(classification_report(y_test, predictions.argmax(axis=1)))
+```
+```Python
+313/313 ━━━━━━━━━━━━━━━━━━━━ 1s 3ms/step
+              precision    recall  f1-score   support
+
+           0       0.81      0.89      0.85      1000
+           1       0.98      0.98      0.98      1000
+           2       0.80      0.87      0.84      1000
+           3       0.90      0.90      0.90      1000
+           4       0.88      0.79      0.83      1000
+           5       0.98      0.98      0.98      1000
+           6       0.78      0.70      0.74      1000
+           7       0.97      0.97      0.97      1000
+           8       0.98      0.98      0.98      1000
+           9       0.97      0.97      0.97      1000
+
+    accuracy                           0.90     10000
+   macro avg       0.90      0.90      0.90     10000
+weighted avg       0.90      0.90      0.90     10000
+```
+
+## Introduction to YOLO V3
+Image detection algorithm
+YOLO view image and draw bounding boxes over what it preceives as identified classes.
+![alt text](image-221.png)
+
+YOLO apply single neural network to the full image. This network divides the image into regions and predicts bounding boxes and class probabilities for each region. These bounding boxes are weighted by the predicted probabilities.1000x Faster than RCNN and 100x faster than fast R-CNN.
+
+```Python
+# Bunch of imports
+import os
+import time
+import cv2
+import numpy as np
+from model.yolo_model import YOLO
+
+# image process function will resize, reduce, and expand image based on original image
+def process_image(img):
+    """Resize, reduce and expand image.
+
+    # Argument:
+        img: original image.
+
+    # Returns
+        image: ndarray(64, 64, 3), processed image.
+    """
+    image = cv2.resize(img, (416, 416),
+                       interpolation=cv2.INTER_CUBIC)
+    image = np.array(image, dtype='float32')
+    image /= 255.
+    image = np.expand_dims(image, axis=0)
+
+    return image
+
+# this function will grab the classes from coco_classes.txt file
+def get_classes(file):
+    """Get classes name.
+
+    # Argument:
+        file: classes name for database.
+
+    # Returns
+        class_names: List, classes name.
+
+    """
+    with open(file) as f:
+        class_names = f.readlines()
+    class_names = [c.strip() for c in class_names]
+
+    return class_names
+
+# this function will draw the bounding boxes using cv2 and also defines percentage that the identified class is of the that particular classes.
+def draw(image, boxes, scores, classes, all_classes):
+    """Draw the boxes on the image.
+
+    # Argument:
+        image: original image.
+        boxes: ndarray, boxes of objects.
+        classes: ndarray, classes of objects.
+        scores: ndarray, scores of objects.
+        all_classes: all classes name.
+    """
+    for box, score, cl in zip(boxes, scores, classes):
+        x, y, w, h = box
+
+        top = max(0, np.floor(x + 0.5).astype(int))
+        left = max(0, np.floor(y + 0.5).astype(int))
+        right = min(image.shape[1], np.floor(x + w + 0.5).astype(int))
+        bottom = min(image.shape[0], np.floor(y + h + 0.5).astype(int))
+
+        cv2.rectangle(image, (top, left), (right, bottom), (255, 0, 0), 2)
+        cv2.putText(image, '{0} {1:.2f}'.format(all_classes[cl], score),
+                    (top, left - 6),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6, (0, 0, 255), 1,
+                    cv2.LINE_AA)
+
+        print('class: {0}, score: {1:.2f}'.format(all_classes[cl], score))
+        print('box coordinate x,y,w,h: {0}'.format(box))
+
+    print()
+
+# this function will take the image and the model and will return the image with the bounding boxes drawn on it.
+def detect_image(image, yolo, all_classes):
+    """Use yolo v3 to detect images.
+
+    # Argument:
+        image: original image.
+        yolo: YOLO, yolo model.
+        all_classes: all classes name.
+
+    # Returns:
+        image: processed image.
+    """
+    pimage = process_image(image)
+
+    start = time.time()
+    boxes, classes, scores = yolo.predict(pimage, image.shape)
+    end = time.time()
+
+    print('time: {0:.2f}s'.format(end - start))
+
+    if boxes is not None:
+        draw(image, boxes, scores, classes, all_classes)
+
+    return image
+
+# this function will detect object or class using video
+def detect_video(video, yolo, all_classes):
+    """Use yolo v3 to detect video.
+
+    # Argument:
+        video: video file.
+        yolo: YOLO, yolo model.
+        all_classes: all classes name.
+    """
+    video_path = os.path.join("videos", "test", video)
+    camera = cv2.VideoCapture(video_path)
+    cv2.namedWindow("detection", cv2.WINDOW_AUTOSIZE)
+
+    # Prepare for saving the detected video
+    sz = (int(camera.get(cv2.CAP_PROP_FRAME_WIDTH)),
+        int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    fourcc = cv2.VideoWriter_fourcc(*'mpeg')
+
+    
+    vout = cv2.VideoWriter()
+    vout.open(os.path.join("videos", "res", video), fourcc, 20, sz, True)
+
+    while True:
+        res, frame = camera.read()
+
+        if not res:
+            break
+
+        image = detect_image(frame, yolo, all_classes)
+        cv2.imshow("detection", image)
+
+        # Save the video frame by frame
+        vout.write(image)
+
+        if cv2.waitKey(110) & 0xff == 27:
+                break
+
+    vout.release()
+    camera.release()
+
+# create instance of the YOLO
+yolo = YOLO(0.6, 0.5)
+file = 'data/coco_classes.txt'
+all_classes = get_classes(file)   
+
+# detect image 
+f = 'jingxiang-gao-489454-unsplash.jpg'
+path = 'images/'+f
+image = cv2.imread(path)
+image = detect_image(image, yolo, all_classes)
+cv2.imwrite('images/res/' + f, image)
+
+# detect video
+etect videos one at a time in videos/test folder    
+video = 'library1.mp4'
+detect_video(video, yolo, all_classes)
+```
+[Click Here](https://github.com/Ashleshk/Computer-Vision-with-Python-Udemy/blob/master/06-YOLOv3/06-YOLO-Object-Detection.ipynb)
+
